@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Restaurant POS Operations Analytics interactive demo dashboard" />
+  <title>Restaurant POS Operations Analytics</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">POS</div>
+        <div>
+          <div class="brand-title">Restaurant Analytics</div>
+          <div class="brand-subtitle">Operations Intelligence</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-btn active" data-view="overview"><span>◫</span> Overview</button>
+        <button class="nav-btn" data-view="store"><span>⌂</span> Store</button>
+        <button class="nav-btn" data-view="customer"><span>◎</span> Customer</button>
+        <button class="nav-btn" data-view="product"><span>◇</span> Product</button>
+        <button class="nav-btn" data-view="operations"><span>↗</span> Operations</button>
+      </nav>
+
+      <div class="sidebar-card">
+        <div class="eyebrow">DEMO DATASET</div>
+        <div class="sidebar-metric"><strong id="sideOrders">—</strong><span>Orders</span></div>
+        <div class="sidebar-metric"><strong id="sideItems">—</strong><span>Item lines</span></div>
+        <div class="sidebar-metric"><strong>3</strong><span>Stores</span></div>
+      </div>
+
+      <div class="sidebar-footer">
+        Synthetic POS data<br/>Portfolio Demo
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">BUSINESS INTELLIGENCE PROJECT</div>
+          <h1>Restaurant POS Operations Analytics</h1>
+          <p class="subtitle">從交易資料找出營運問題，將 Data → KPI → Insight → Action</p>
+        </div>
+        <div class="status-pill"><span></span> Interactive Demo</div>
+      </header>
+
+      <section class="filter-panel">
+        <div class="filter-group">
+          <label>開始日期</label>
+          <input id="dateFrom" type="date" value="2026-08-01" />
+        </div>
+        <div class="filter-group">
+          <label>結束日期</label>
+          <input id="dateTo" type="date" value="2026-08-31" />
+        </div>
+        <div class="filter-group">
+          <label>門市</label>
+          <select id="storeFilter"><option value="ALL">全部門市</option></select>
+        </div>
+        <div class="filter-group">
+          <label>訂單類型</label>
+          <select id="orderTypeFilter">
+            <option value="ALL">全部</option>
+            <option value="內用">內用</option>
+            <option value="外帶">外帶</option>
+            <option value="外送">外送</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>會員</label>
+          <select id="memberFilter">
+            <option value="ALL">全部</option>
+            <option value="MEMBER">會員</option>
+            <option value="NON_MEMBER">非會員</option>
+          </select>
+        </div>
+        <button id="resetFilters" class="reset-btn">重設</button>
+      </section>
+
+      <section id="overview" class="view active">
+        <div class="kpi-grid">
+          <article class="kpi-card"><div class="kpi-label">Net Revenue</div><div class="kpi-value" id="kpiRevenue">—</div><div class="kpi-foot">完成訂單淨營收</div></article>
+          <article class="kpi-card"><div class="kpi-label">Customers</div><div class="kpi-value" id="kpiGuests">—</div><div class="kpi-foot">來客人次</div></article>
+          <article class="kpi-card"><div class="kpi-label">Avg Spend / Guest</div><div class="kpi-value" id="kpiAvgSpend">—</div><div class="kpi-foot">客單價</div></article>
+          <article class="kpi-card"><div class="kpi-label">Avg Daily Table Turn</div><div class="kpi-value" id="kpiTurnover">—</div><div class="kpi-foot">平均每日翻桌次數</div></article>
+          <article class="kpi-card alert-card"><div class="kpi-label">Avg Dining Time</div><div class="kpi-value" id="kpiDining">—</div><div class="kpi-foot">內用平均停留時間</div></article>
+        </div>
+
+        <div class="grid-2">
+          <article class="panel panel-wide">
+            <div class="panel-head"><div><div class="eyebrow">TREND</div><h2>每日營業額趨勢</h2></div><div class="mini-note">完成訂單</div></div>
+            <div class="chart-wrap"><canvas id="revenueTrendChart"></canvas></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><div class="eyebrow">PEAK HOUR</div><h2>各時段營業額</h2></div></div>
+            <div class="chart-wrap"><canvas id="hourlyRevenueChart"></canvas></div>
+          </article>
+        </div>
+
+        <div class="grid-3">
+          <article class="panel">
+            <div class="panel-head"><div><div class="eyebrow">CHANNEL</div><h2>訂單來源</h2></div></div>
+            <div class="chart-wrap small"><canvas id="channelChart"></canvas></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><div class="eyebrow">PAYMENT</div><h2>付款方式</h2></div></div>
+            <div class="chart-wrap small"><canvas id="paymentChart"></canvas></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><div class="eyebrow">SNAPSHOT</div><h2>本期重點</h2></div></div>
+            <div id="overviewInsights" class="insight-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="store" class="view">
+        <div class="section-intro">
+          <div><div class="eyebrow">STORE PERFORMANCE</div><h2>門市營運比較</h2></div>
+          <p>比較營收、來客、客單、翻桌與平均用餐時間。</p>
+        </div>
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-head"><h2>門市營收</h2></div>
+            <div class="chart-wrap"><canvas id="storeRevenueChart"></canvas></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><h2>平均用餐時間</h2></div>
+            <div class="chart-wrap"><canvas id="storeDiningChart"></canvas></div>
+          </article>
+        </div>
+        <article class="panel">
+          <div class="panel-head"><div><div class="eyebrow">COMPARISON TABLE</div><h2>門市 KPI 明細</h2></div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>門市</th><th>營業額</th><th>來客數</th><th>客單價</th><th>完成桌次</th><th>平均每日翻桌</th><th>平均用餐</th></tr></thead>
+              <tbody id="storeTableBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section id="customer" class="view">
+        <div class="section-intro">
+          <div><div class="eyebrow">CUSTOMER INTELLIGENCE</div><h2>會員與顧客分析</h2></div>
+          <p>看會員貢獻、會員等級與高價值顧客。</p>
+        </div>
+        <div class="grid-3">
+          <article class="panel">
+            <div class="panel-head"><h2>會員 / 非會員營收</h2></div>
+            <div class="chart-wrap small"><canvas id="memberRevenueChart"></canvas></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><h2>會員等級營收</h2></div>
+            <div class="chart-wrap small"><canvas id="memberLevelChart"></canvas></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><h2>會員指標</h2></div>
+            <div id="memberKpis" class="stat-stack"></div>
+          </article>
+        </div>
+        <article class="panel">
+          <div class="panel-head"><div><div class="eyebrow">TOP CUSTOMERS</div><h2>高價值會員</h2></div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>會員</th><th>等級</th><th>消費次數</th><th>累計消費</th><th>平均每筆</th></tr></thead>
+              <tbody id="topMembersBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section id="product" class="view">
+        <div class="section-intro">
+          <div><div class="eyebrow">PRODUCT PERFORMANCE</div><h2>商品與購物籃分析</h2></div>
+          <p>看熱門商品、品類貢獻與常見搭配。</p>
+        </div>
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-head"><h2>Top 10 商品營收</h2></div>
+            <div class="chart-wrap"><canvas id="topItemsChart"></canvas></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><h2>品類營收結構</h2></div>
+            <div class="chart-wrap"><canvas id="categoryChart"></canvas></div>
+          </article>
+        </div>
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-head"><div><div class="eyebrow">BASKET ANALYSIS</div><h2>常見商品組合</h2></div></div>
+            <div id="basketPairs" class="pair-list"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><div class="eyebrow">DISCOUNT</div><h2>商品折扣排行</h2></div></div>
+            <div class="table-wrap compact">
+              <table><thead><tr><th>商品</th><th>折扣金額</th><th>營收</th><th>折扣率</th></tr></thead><tbody id="discountItemsBody"></tbody></table>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="operations" class="view">
+        <div class="section-intro">
+          <div><div class="eyebrow">FROM KPI TO ACTION</div><h2>營運問題診斷</h2></div>
+          <p>不是只看 Dashboard，而是把異常變成可以執行的改善方案。</p>
+        </div>
+
+        <div class="grid-2">
+          <article class="panel">
+            <div class="panel-head"><h2>內用：各時段平均用餐時間</h2></div>
+            <div class="chart-wrap"><canvas id="diningByHourChart"></canvas></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><h2>各門市折扣率</h2></div>
+            <div class="chart-wrap"><canvas id="discountByStoreChart"></canvas></div>
+          </article>
+        </div>
+
+        <div class="diagnosis-grid">
+          <article class="diagnosis problem">
+            <div class="diag-icon">!</div>
+            <div class="eyebrow">PROBLEM DETECTED</div>
+            <h3 id="problemTitle">—</h3>
+            <p id="problemText">—</p>
+          </article>
+          <article class="diagnosis">
+            <div class="diag-icon">?</div>
+            <div class="eyebrow">POSSIBLE ROOT CAUSE</div>
+            <h3>往下切資料找原因</h3>
+            <div id="rootCauseList" class="bullet-flow"></div>
+          </article>
+          <article class="diagnosis action">
+            <div class="diag-icon">✓</div>
+            <div class="eyebrow">RECOMMENDED ACTION</div>
+            <h3>把洞察轉成改善</h3>
+            <div id="actionList" class="bullet-flow"></div>
+          </article>
+        </div>
+
+        <article class="panel story-panel">
+          <div class="story-step"><span>1</span><strong>POS Data</strong><small>交易、會員、商品、時間</small></div>
+          <div class="story-arrow">→</div>
+          <div class="story-step"><span>2</span><strong>KPI</strong><small>營收、客單、翻桌、折扣</small></div>
+          <div class="story-arrow">→</div>
+          <div class="story-step"><span>3</span><strong>Insight</strong><small>找出異常門市 / 時段</small></div>
+          <div class="story-arrow">→</div>
+          <div class="story-step"><span>4</span><strong>Action</strong><small>排班、備料、促銷、流程</small></div>
+        </article>
+      </section>
+
+      <footer>
+        <strong>Restaurant POS Operations Analytics</strong>
+        <span>Portfolio Prototype · Synthetic Dataset · HTML / CSS / JavaScript / Chart.js</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="data/data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
